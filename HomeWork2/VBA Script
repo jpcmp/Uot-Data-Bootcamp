@@ -1,0 +1,66 @@
+Sub homework2()
+
+    Dim maxrow, lastrow As Double
+    Dim volume As Double
+    Dim openp, closep As Double
+
+Application.ScreenUpdating = False
+    
+' run through sheets
+    For i = 1 To Sheets.Count
+        Sheets(i).Activate
+        yy = Sheets(i).Name
+        maxrow = Cells(Rows.Count, 1).End(xlUp).Row
+        Cells(1, 9) = "Ticker"
+        Cells(1, 10) = "Yearly Change"
+        Cells(1, 11) = "Percent Change"
+        Cells(1, 12) = "Total Stock Volume"
+        Cells(1, 16) = "Ticker"
+        Cells(1, 17) = "Value"
+        Cells(2, 15) = "Greatest % Increase"
+        Cells(3, 15) = "Greatest % Decrease"
+        Cells(4, 15) = "Greatest Total Volume"
+' get stock names that traded that year
+        Range(Cells(2, 1), Cells(maxrow, 1)).Copy Range(Cells(2, 9), Cells(maxrow, 9))
+        Range(Cells(2, 9), Cells(maxrow, 9)).RemoveDuplicates Columns:=1
+        lastrow = Cells(Rows.Count, 9).End(xlUp).Row
+' run through new names' column to get volume, open price and close price for each of them
+        For j = 2 To lastrow
+            fdy = DateSerial(yy, 1, 1)
+            ldy = DateSerial(yy, 12, 31)
+            Cells(j, 12) = Application.SumIf(Range(Cells(2, 1), Cells(maxrow, 1)), Cells(j, 9), Range(Cells(2, 7), Cells(maxrow, 7)))
+            openp = 0
+            closep = 0
+' FORs to get open and close price that are different than zero
+            For k = fdy To ldy
+            openp = Application.SumIfs(Range(Cells(2, 3), Cells(maxrow, 3)), Range(Cells(2, 1), Cells(maxrow, 1)), Cells(j, 9), Range(Cells(2, 2), Cells(maxrow, 2)), Format(k, "yyyymmdd"))
+            If openp <> 0 Then Exit For
+            Next k
+            For k = ldy To fdy Step -1
+            closep = Application.SumIfs(Range(Cells(2, 6), Cells(maxrow, 6)), Range(Cells(2, 1), Cells(maxrow, 1)), Cells(j, 9), Range(Cells(2, 2), Cells(maxrow, 2)), Format(k, "yyyymmdd"))
+            If closep <> 0 Then Exit For
+            Next k
+            Cells(j, 10) = (closep - openp)
+          If openp <> 0 Then Cells(j, 11) = (closep - openp) / openp Else Cells(j, 11) = 0
+        Next j
+        Range(Cells(2, 10), Cells(lastrow, 10)).NumberFormat = "#,##0.00"
+        Range(Cells(2, 11), Cells(lastrow, 11)).NumberFormat = "#,##0.00%"
+        Range(Cells(2, 12), Cells(lastrow, 12)).NumberFormat = "#,##0.00"
+' getting Max and Min values from ranges
+        Cells(2, 17) = Application.Max(Range(Cells(2, 11), Cells(lastrow, 11)))
+        Cells(3, 17) = Application.Min(Range(Cells(2, 11), Cells(lastrow, 11)))
+        Cells(4, 17) = Application.Max(Range(Cells(2, 12), Cells(lastrow, 12)))
+        Cells(2, 17).NumberFormat = "#,##0.00%"
+        Cells(3, 17).NumberFormat = "#,##0.00%"
+        Cells(4, 17).NumberFormat = "#,##0.00"
+' looking up for the respective asset for each of those above values
+        Range(Cells(2, 9), Cells(lastrow, 9)).Copy Range(Cells(2, 13), Cells(lastrow, 13))
+        Cells(2, 16) = Application.VLookup(Cells(2, 17), Range(Cells(2, 11), Cells(lastrow, 13)), 3, False)
+        Cells(3, 16) = Application.VLookup(Cells(3, 17), Range(Cells(2, 11), Cells(lastrow, 13)), 3, False)
+        Cells(4, 16) = Application.VLookup(Cells(4, 17), Range(Cells(2, 12), Cells(lastrow, 13)), 2, False)
+        Range(Cells(2, 13), Cells(lastrow, 13)).Clear
+        Range(Cells(1, 9), Cells(17, lastrow)).EntireColumn.AutoFit
+    Next i
+
+    Application.ScreenUpdating = True
+End Sub
